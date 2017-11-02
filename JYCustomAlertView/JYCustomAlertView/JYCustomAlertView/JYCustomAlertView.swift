@@ -10,23 +10,31 @@ import UIKit
 
 public let kCustomAlertViewDefaultButtonHeight: CGFloat = 50
 public let kCustomAlertViewDefaultButtonSpacerHeight: CGFloat = 1
-public let kCustomAlertViewCornerRadius: CGFloat = 7
+public let kCustomAlertViewCornerRadius: CGFloat = 5
 public let kCustomMotionEffectExtent: CGFloat = 10
 
 public var buttonHeight: CGFloat = 0
 public var buttonSpacerHeight: CGFloat = 0
 
+enum JYCustomAlertViewPositon {
+    case center // 默认center
+    case bottom
+    case top
+}
 
 class JYCustomAlertView: UIView {
     
     var parentView: UIView! = nil // 父视图
-    var dialogView: UIView! = nil // 弹出框视图
-    var containerView: UIView! = nil //容器视图
-    
-    var buttonTitles = [String]()
+    var dialogView: UIView! = nil // 弹出框
+    var containerView: UIView! = nil //弹出框内的容器视图
+    var buttonTitles = [String]() // 底部的标题数组
     var useMotionEffects = false // 是否启用视觉差效果
     var closeOnTouchUpOutside = true // 是否点击背景隐藏视图
     var onButtonTouchUpInside: ((JYCustomAlertView, Int) -> ())? = nil // 按钮点击的回调
+    /// style
+    var positon = JYCustomAlertViewPositon.center // 默认居中
+    var showCornerRadius = true // 默认显示圆角
+    /// ^^^
     
     deinit {
         UIDevice.current.endGeneratingDeviceOrientationNotifications()
@@ -88,6 +96,9 @@ extension JYCustomAlertView {
     ///
     /// - Returns: 尺寸
     fileprivate func countDialogSize() -> CGSize {
+        if containerView == nil {
+            return CGSize(width: 300, height: 150)
+        }
         let dialogWidth = containerView.frame.size.width
         let dialogHeight = containerView.frame.size.height + buttonHeight + buttonSpacerHeight
         return CGSize(width: dialogWidth, height: dialogHeight)
@@ -139,7 +150,6 @@ extension JYCustomAlertView {
     
     /// Button has been touched
     @objc fileprivate func customDialogButtonTouchUpInside(sender: UIButton) {
-        
         if let clouser = onButtonTouchUpInside {
             clouser(self, sender.tag)
         }
@@ -149,6 +159,7 @@ extension JYCustomAlertView {
     ///
     /// - Returns: 容器视图
     fileprivate func createContainerView() -> UIView {
+        
         if containerView == nil {
             containerView = UIView(frame: CGRect(x: 0, y: 0, width: 300, height: 150))
         }
@@ -159,10 +170,26 @@ extension JYCustomAlertView {
         self.frame = CGRect(x: 0, y: 0, width: screenSize.width, height: screenSize.height)
         
         // This is the dialog's container; we attach the custom content and the buttons to this one
-        let dialogContainer = UIView(frame: CGRect(x: (screenSize.width - dialogSize.width) / 2,
-                                                   y: (screenSize.height - dialogSize.height) / 2,
-                                                   width: dialogSize.width,
-                                                   height: dialogSize.height))
+        var rect = CGRect.zero
+        switch positon {
+        case .center:
+            rect = CGRect(x: (screenSize.width - dialogSize.width) / 2,
+                          y: (screenSize.height - dialogSize.height) / 2,
+                          width: dialogSize.width,
+                          height: dialogSize.height)
+        case .bottom:
+            rect = CGRect(x: (screenSize.width - dialogSize.width) / 2,
+                          y: self.frame.size.height - dialogSize.height,
+                          width: dialogSize.width,
+                          height: dialogSize.height)
+        case .top:
+            rect = CGRect(x: (screenSize.width - dialogSize.width) / 2,
+                          y: 0,
+                          width: dialogSize.width,
+                          height: dialogSize.height)
+        }
+        
+        let dialogContainer = UIView(frame: rect)
         
         // First, we style the dialog to match the iOS7 UIAlertView >>>
         let gradient = CAGradientLayer()
@@ -173,20 +200,24 @@ extension JYCustomAlertView {
                            UIColor(red: 218.0/255.0, green: 218.0/255.0, blue: 218.0/255.0, alpha: 1).cgColor] as [Any]
         
         let cornerRadius = kCustomAlertViewCornerRadius
-        gradient.cornerRadius = cornerRadius
+        if showCornerRadius {
+            gradient.cornerRadius = cornerRadius
+            dialogContainer.layer.cornerRadius = cornerRadius
+            //            dialogContainer.layer.borderColor = UIColor(red: 198.0/255.0, green: 198.0/255.0, blue: 198.0/255.0, alpha: 1).cgColor
+            //            dialogContainer.layer.borderWidth = 1
+        }
         dialogContainer.layer.insertSublayer(gradient, at: 0)
-        
-        dialogContainer.layer.cornerRadius = cornerRadius
-        dialogContainer.layer.borderColor = UIColor(red: 198.0/255.0, green: 198.0/255.0, blue: 198.0/255.0, alpha: 1).cgColor
-        dialogContainer.layer.borderWidth = 1
         dialogContainer.layer.shadowRadius = cornerRadius + 5
         dialogContainer.layer.shadowOpacity = 0.1
-        dialogContainer.layer.shadowOffset = CGSize(width: 0 - (cornerRadius + 5)/2, height: 0 - (cornerRadius + 5) / 2)
+        dialogContainer.layer.shadowOffset = CGSize(width: 0 - (cornerRadius + 5) / 2, height: 0 - (cornerRadius + 5) / 2)
         dialogContainer.layer.shadowColor = UIColor.black.cgColor
         dialogContainer.layer.shadowPath = UIBezierPath(roundedRect: dialogContainer.bounds, cornerRadius: dialogContainer.layer.cornerRadius).cgPath
         
         // There is a line above the button
-        let line = UIView(frame: CGRect(x: 0, y: dialogContainer.bounds.size.height - buttonHeight - buttonSpacerHeight, width: dialogContainer.bounds.size.width, height: buttonSpacerHeight))
+        let line = UIView(frame: CGRect(x: 0,
+                                        y: dialogContainer.bounds.size.height - buttonHeight - buttonSpacerHeight,
+                                        width: dialogContainer.bounds.size.width,
+                                        height: buttonSpacerHeight))
         line.backgroundColor = UIColor(red: 198.0/255.0, green: 198.0/255.0, blue: 198.0/255.0, alpha: 1)
         dialogContainer.addSubview(line)
         // ^^^
@@ -211,6 +242,7 @@ extension JYCustomAlertView {
         
         dialogView.layer.shouldRasterize = true
         dialogView.layer.rasterizationScale = UIScreen.main.scale
+        dialogView.layer.masksToBounds = true
         
         self.layer.shouldRasterize = true
         self.layer.rasterizationScale = UIScreen.main.scale
@@ -219,7 +251,7 @@ extension JYCustomAlertView {
             self.applyMotionEffects()
         }
         
-        self.backgroundColor = UIColor(colorLiteralRed: 0, green: 0, blue: 0, alpha: 0)
+        self.backgroundColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0)
         self.addSubview(dialogView)
         
         // Can be attached to a view or to the top most window
@@ -228,14 +260,29 @@ extension JYCustomAlertView {
             parentV.addSubview(self)
         } else {
             // Attached to the top most window
-            
             let screenSize = self.countScreenSize()
             let dialogSize = self.countDialogSize()
             let keyBoardSize = CGSize(width: 0, height: 0)
-            dialogView.frame = CGRect(x: (screenSize.width - dialogSize.width) / 2,
-                                      y: (screenSize.height - keyBoardSize.height - dialogSize.height) / 2,
-                                      width: dialogSize.width,
-                                      height: dialogSize.height)
+            
+            var dialogViewFrame = CGRect.zero
+            switch positon {
+            case .center:
+                dialogViewFrame = CGRect(x: (screenSize.width - dialogSize.width) / 2,
+                                         y: (screenSize.height - keyBoardSize.height - dialogSize.height) / 2,
+                                         width: dialogSize.width,
+                                         height: dialogSize.height)
+            case .bottom:
+                dialogViewFrame = CGRect(x: (screenSize.width - dialogSize.width) / 2,
+                                         y: self.frame.size.height - dialogSize.height,
+                                         width: dialogSize.width,
+                                         height: dialogSize.height)
+            case .top:
+                dialogViewFrame = CGRect(x: (screenSize.width - dialogSize.width) / 2,
+                                         y: 0,
+                                         width: dialogSize.width,
+                                         height: dialogSize.height)
+            }
+            dialogView.frame = dialogViewFrame
             UIApplication.shared.windows.first!.addSubview(self)
         }
         
@@ -255,8 +302,8 @@ extension JYCustomAlertView {
         dialogView.layer.opacity = 1.0
         UIView.animate(withDuration: 0.2, delay: 0, options: [], animations: {
             self.backgroundColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0)
-            self.dialogView.layer.transform = CATransform3DConcat(currentTransform, CATransform3DMakeScale(0.6, 0.6, 1.0))
-            self.dialogView.layer.opacity = 0.0
+            self.dialogView?.layer.transform = CATransform3DConcat(currentTransform, CATransform3DMakeScale(0.6, 0.6, 1.0))
+            self.dialogView?.layer.opacity = 0.0
         }) { (finished) in
             for v in self.subviews {
                 v.removeFromSuperview()
@@ -279,16 +326,29 @@ extension JYCustomAlertView {
             return
         }
         
-        let screenWidth = UIScreen.main.bounds.size.width
-        let screenHeight = UIScreen.main.bounds.size.height
-        
+        let screenSize = self.countScreenSize()
+        let dialogSize = self.countDialogSize()
+        var dialogViewFrame = CGRect.zero
+        switch positon {
+        case .center:
+            dialogViewFrame = CGRect(x: (screenSize.width - dialogSize.width) / 2,
+                                     y: (screenSize.height - dialogSize.height) / 2,
+                                     width: dialogSize.width,
+                                     height: dialogSize.height)
+        case .bottom:
+            dialogViewFrame = CGRect(x: (screenSize.width - dialogSize.width) / 2,
+                                     y: self.frame.size.height - dialogSize.height,
+                                     width: dialogSize.width,
+                                     height: dialogSize.height)
+        case .top:
+            dialogViewFrame = CGRect(x: (screenSize.width - dialogSize.width) / 2,
+                                     y: 0,
+                                     width: dialogSize.width,
+                                     height: dialogSize.height)
+        }
         UIView.animate(withDuration: 0.2, delay: 0, options: [], animations: {
-            let dialogSize = self.countDialogSize()
-            self.frame = CGRect(x: 0, y: 0, width: screenWidth, height: screenHeight)
-            self.dialogView.frame = CGRect(x: (screenWidth - dialogSize.width) / 2,
-                                           y: (screenHeight - dialogSize.height) / 2,
-                                           width: dialogSize.width,
-                                           height: dialogSize.height)
+            self.frame = CGRect(x: 0, y: 0, width: screenSize.width, height: screenSize.height)
+            self.dialogView?.frame = dialogViewFrame
         }, completion: nil)
     }
     
@@ -299,12 +359,26 @@ extension JYCustomAlertView {
         
         let screenSize = self.countScreenSize()
         let dialogSize = self.countDialogSize()
-        
+        var dialogViewFrame = CGRect.zero
+        switch positon {
+        case .center:
+            dialogViewFrame = CGRect(x: (screenSize.width - dialogSize.width) / 2,
+                                     y: (screenSize.height - dialogSize.height) / 2,
+                                     width: dialogSize.width,
+                                     height: dialogSize.height)
+        case .bottom:
+            dialogViewFrame = CGRect(x: (screenSize.width - dialogSize.width) / 2,
+                                     y: self.frame.size.height - dialogSize.height,
+                                     width: dialogSize.width,
+                                     height: dialogSize.height)
+        case .top:
+            dialogViewFrame = CGRect(x: (screenSize.width - dialogSize.width) / 2,
+                                     y: 0,
+                                     width: dialogSize.width,
+                                     height: dialogSize.height)
+        }
         UIView.animate(withDuration: 0.2, delay: 0, options: [], animations: {
-            self.dialogView.frame = CGRect(x: (screenSize.width - dialogSize.width) / 2,
-                                           y: (screenSize.height - dialogSize.height) / 2,
-                                           width: dialogSize.width,
-                                           height: dialogSize.height)
+            self.dialogView?.frame = dialogViewFrame
         }, completion: nil)
     }
     
@@ -315,12 +389,26 @@ extension JYCustomAlertView {
         
         let screenSize = self.countScreenSize()
         let dialogSize = self.countDialogSize()
-        
+        var dialogViewFrame = CGRect.zero
+        switch positon {
+        case .center:
+            dialogViewFrame = CGRect(x: (screenSize.width - dialogSize.width) / 2,
+                                     y: (screenSize.height - dialogSize.height) / 2,
+                                     width: dialogSize.width,
+                                     height: dialogSize.height)
+        case .bottom:
+            dialogViewFrame = CGRect(x: (screenSize.width - dialogSize.width) / 2,
+                                     y: self.frame.size.height - dialogSize.height,
+                                     width: dialogSize.width,
+                                     height: dialogSize.height)
+        case .top:
+            dialogViewFrame = CGRect(x: (screenSize.width - dialogSize.width) / 2,
+                                     y: 0,
+                                     width: dialogSize.width,
+                                     height: dialogSize.height)
+        }
         UIView.animate(withDuration: 0.2, delay: 0, animations: {
-            self.dialogView.frame = CGRect(x: (screenSize.width - dialogSize.width) / 2,
-                                           y: (screenSize.height - dialogSize.height) / 2,
-                                           width: dialogSize.width,
-                                           height: dialogSize.height)
+            self.dialogView?.frame = dialogViewFrame
         }, completion: nil)
     }
 }
