@@ -8,6 +8,7 @@
 
 import UIKit
 
+public let kCustomAlertViewDefaultAnimationDuring: Double = 0.3
 public let kCustomAlertViewDefaultButtonHeight: CGFloat = 50
 public let kCustomAlertViewDefaultButtonSpacerHeight: CGFloat = 1
 public let kCustomAlertViewCornerRadius: CGFloat = 5
@@ -203,8 +204,6 @@ extension JYCustomAlertView {
         if showCornerRadius {
             gradient.cornerRadius = cornerRadius
             dialogContainer.layer.cornerRadius = cornerRadius
-            //            dialogContainer.layer.borderColor = UIColor(red: 198.0/255.0, green: 198.0/255.0, blue: 198.0/255.0, alpha: 1).cgColor
-            //            dialogContainer.layer.borderWidth = 1
         }
         dialogContainer.layer.insertSublayer(gradient, at: 0)
         dialogContainer.layer.shadowRadius = cornerRadius + 5
@@ -289,7 +288,7 @@ extension JYCustomAlertView {
         dialogView.layer.opacity = 0.5
         dialogView.layer.transform = CATransform3DMakeScale(1.3, 1.3, 1.0)
         
-        UIView.animate(withDuration: 0.2, delay: 0, options: [], animations: {
+        UIView.animate(withDuration: kCustomAlertViewDefaultAnimationDuring, delay: 0, options: [], animations: {
             self.backgroundColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0.4)
             self.dialogView.layer.opacity = 1.0
             self.dialogView.layer.transform = CATransform3DMakeScale(1, 1, 1)
@@ -300,7 +299,7 @@ extension JYCustomAlertView {
     public func close() {
         let currentTransform = dialogView.layer.transform
         dialogView.layer.opacity = 1.0
-        UIView.animate(withDuration: 0.2, delay: 0, options: [], animations: {
+        UIView.animate(withDuration: kCustomAlertViewDefaultAnimationDuring, delay: 0, options: [], animations: {
             self.backgroundColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0)
             self.dialogView?.layer.transform = CATransform3DConcat(currentTransform, CATransform3DMakeScale(0.6, 0.6, 1.0))
             self.dialogView?.layer.opacity = 0.0
@@ -346,7 +345,7 @@ extension JYCustomAlertView {
                                      width: dialogSize.width,
                                      height: dialogSize.height)
         }
-        UIView.animate(withDuration: 0.2, delay: 0, options: [], animations: {
+        UIView.animate(withDuration: kCustomAlertViewDefaultAnimationDuring, delay: 0, options: [], animations: {
             self.frame = CGRect(x: 0, y: 0, width: screenSize.width, height: screenSize.height)
             self.dialogView?.frame = dialogViewFrame
         }, completion: nil)
@@ -377,7 +376,7 @@ extension JYCustomAlertView {
                                      width: dialogSize.width,
                                      height: dialogSize.height)
         }
-        UIView.animate(withDuration: 0.2, delay: 0, options: [], animations: {
+        UIView.animate(withDuration: kCustomAlertViewDefaultAnimationDuring, delay: 0, options: [], animations: {
             self.dialogView?.frame = dialogViewFrame
         }, completion: nil)
     }
@@ -407,7 +406,7 @@ extension JYCustomAlertView {
                                      width: dialogSize.width,
                                      height: dialogSize.height)
         }
-        UIView.animate(withDuration: 0.2, delay: 0, animations: {
+        UIView.animate(withDuration: kCustomAlertViewDefaultAnimationDuring, delay: 0, animations: {
             self.dialogView?.frame = dialogViewFrame
         }, completion: nil)
     }
